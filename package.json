@@ -1,0 +1,13 @@
+{
+    "name": "pegged-cutter",
+    "description": "Utility to remove unnessesary nodes from a PEG-generated parse tree",
+    "copyright": "Copyright © 2016-2017, JavaCommons",
+    "license": "Boost",
+    "authors": [ "JavaCommons" ],
+    "targetType": "library",
+    "dependencies": {
+        "pegged": "~>0.4.2"
+    },
+    "importPaths": ["."],
+    "sourcePaths": ["."]
+}
