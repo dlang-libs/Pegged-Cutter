@@ -1,7 +1,3 @@
-# Pegged-Cutter
-
-* 以下はドキュメントの代わりに(暫定的に) Qiita に投稿した記事を引用しています。
-
 DUBパッケージ「[pegged-cutter](https://code.dlang.org/packages/pegged-cutter)」を公開しました。
 [pegged-cutter](https://code.dlang.org/packages/pegged-cutter) は、[PhilippeSigaud/Pegged](https://github.com/PhilippeSigaud/Pegged) を使って生成された構文木(Parse Tree)をいい具合に整形(刈り込み)するためのユーティリティーです。どんな風に役に立つかは、この記事と後々の記事を見て感じ取っていただければと思っています。
 
@@ -16,7 +12,7 @@ DUBから使えるように、https://code.dlang.org/packages/pegged-cutter に�
 [PhilippeSigaud/Pegged](https://github.com/PhilippeSigaud/Pegged) と [pegged-cutter](https://code.dlang.org/packages/pegged-cutter) を用いるための設定を以下のように dub.json に記述しておきます。
 
 
-```text:dub.json
+```dub.json
 {
     "name": "test-exe",
     "targetName": "test",
@@ -28,7 +24,7 @@ DUBから使えるように、https://code.dlang.org/packages/pegged-cutter に�
     "importPaths": [],
     "sourcePaths": [],
     "sourceFiles": [
-        "lang.d"
+        "test.d"
     ]
 }
 
@@ -104,14 +100,14 @@ Lang1 [0, 35]["var", "x", "=", "1234", ";", "var", "y", "=", "5678", ";", "dump"
 「バージョン1の実行結果」の構文木を見ると、<kbd>Lang1.VarDeclaration</kbd>(`var x = 1234;`等に相当)が2回、<kbd>Lang1.DumpStatement</kbd>(`dump;`に相当)が1回含まれているのがわかります。
 
 * <kbd>Lang1.VarDeclaration</kbd> と <kbd>Lang1.DumpStatement</kbd> の上位にある <kbd>Lang1.EvalUnit</kbd> は <kbd>EvalUnit < VarDeclaration / DumpStatement</kbd> という文法定義にあるように出現する可能性のある構文が変数定義と変数ダンプのいずれか(OR)であることを示すための定義であり、ソースの内容を実行する際には不必要な階層です。
-* 同様に、<kbd>Lang1.EvalUnit</kbd> の上位にある <kbd>Lang1.TopLevel</kbd> は、<kbd>TopLevel < EvalUnit+ eoi</kbd> という文法定義にあるように、<kbd>Lang1.EvalUnit</kbd> が一回以上(この例では0回を許していません)出現することを期待しています。(最後の <kbd>eoi</kbd> がないと、文法エラーがある場合に途中までの解析成功でもOKとなってしまいます。そうならないために、<kbd>eoi</kbd> を付けてソース全体で解析成功となるようにしています) 繰り返しを束ねるために親ノードが必要ですが、[PhilippeSigaud/Pegged](https://github.com/PhilippeSigaud/Pegged) では、最上位の(エントリーポイント)非終端記号に相当するノードの上に文法定義の最初に指定した「Lang1:」に対するノードが存在するので、<kbd>Lang1.TopLevel</kbd> も削除できます。
+* 同様に、<kbd>Lang1.EvalUnit</kbd> の上位にある <kbd>Lang1.TopLevel</kbd> は、<kbd>TopLevel < EvalUnit+ eoi</kbd> という文法定義にあるように、<kbd>Lang1.EvalUnit</kbd> が一回以上(この例では0回を許していません)出現することを期待しています。繰り返しを束ねるために親ノードが必要ですが、[PhilippeSigaud/Pegged](https://github.com/PhilippeSigaud/Pegged) では、最上位の(エントリーポイント)非終端記号に相当するノードの上に文法定義の最初に指定した「Lang1:」に対するノードが存在するので、<kbd>Lang1.TopLevel</kbd> も削除できます。
 
 ## バージョン2
 
 バージョン2では、[pegged-cutter](https://code.dlang.org/packages/pegged-cutter) の機能を用いて上記で示した <kbd>Lang1.TopLevel</kbd> と <kbd>Lang1.EvalUnit</kbd> を削除(省略)してみます。
 main関数内の2行目に追加した以下の行による効果は、構文木を writeln() で表示した際の出力(ツリー表示)で確認できます。(下記の「バージョン2の実行結果」を参照)
 
-```
+```js
     pt.cutNodes([`Lang1.TopLevel`, `Lang1.EvalUnit`]); // バージョン2で追加
 ```
 
@@ -267,6 +263,14 @@ Lang1 [0, 35]["var", "x", "=", "1234", ";", "var", "y", "=", "5678", ";", "dump"
 
 * <kbd>EvalUnit < VarDeclaration / DumpStatement</kbd> という文法定義の「EvalUnit」という名前の先頭にアンダースコアを付けて「_EvalUnit」にします。具体的には、<kbd>\_EvalUnit < VarDeclaration / DumpStatement</kbd> という風に変更します。
 * 同様に、<kbd>TopLevel < EvalUnit+ eoi</kbd> の部分も変更します。「TopLevel」の部分だけでなく <kbd>\_TopLevel < \_EvalUnit+ eoi</kbd> のように右辺に含まれる「EvalUnit」の部分にもアンダースコアを付けるのをお忘れなく。
+
+バージョン4のmain関数では、バージョン2およびバージョン3で指定していた cutNodes() の引数を削除しています。(<kbd>pt.cutNodes(null);</kbd>としても同じ) 非終端記号の識別子の先頭がアンダースコアで開始されている場合は自動的に削除されます。また、<kbd>pt.cutNodes([\`Lang1.DumpStatement\`]);</kbd> のように追加指定することでアンダースコアを予め付けていない非終端記号を追加で削除することもできます。(アンダースコアによる指定と明示的な名前の指定を併用することが可能です)
+
+```js
+    // pt.cutNodes([`Lang1.TopLevel`, `Lang1.EvalUnit`]); // バージョン2で追加⇒バージョン4で削除
+    pt.cutNodes(); // バージョン4で追加
+```
+
 
 ```d:test.d(バージョン4)
 import pegged.grammar;
