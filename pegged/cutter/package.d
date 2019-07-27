@@ -27,7 +27,10 @@ void cutNodes(TParseTree)(ref TParseTree p, string[] names1 = null, string[] nam
 		ParseTree[] new_children;
 		foreach (ref child; p.children)
 		{
-			if (child.name.canFind('!'))
+			if (child.name == "any")
+			{
+			}
+			else if (child.name.canFind('!'))
 			{
 			}
 			else if (names1 !is null && names1.canFind(child.name))
